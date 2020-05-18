@@ -1,0 +1,19 @@
+---
+- name: Creating /etc on target
+  file:
+    path: "{% if not ansible_local.bootstrapped | default(false) %}{{root_target}}{% endif %}/etc"
+    mode: "0755"
+    state: directory
+
+- name: Downloading host's etckeeper repo
+  git:
+    repo: "{{ metadata_repo }}/{{ homd_prefix }}-{{ restic_hostname }}"
+    dest: "{% if not ansible_local.bootstrapped | default(false) %}{{root_target}}{% endif %}/etc"
+    accept_hostkey: yes
+    version: "{{ etckeeper_branch | default ('etckeeper')}}"
+  register: _etckeeper
+
+- name: Gather facts with extra host metadata (if last changed)
+  setup:
+    fact_path: "{% if not ansible_local.bootstrapped | default(false) %}{{root_target}}/etc/ansible/facts.d{% else %}{{ omit }}{% endif %}"
+  when: _etckeeper.changed
